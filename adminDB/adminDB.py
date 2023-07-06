@@ -80,3 +80,75 @@ class AdminDB:
             cursor.execute(query, data)
             conn.commit()
             return new_id
+
+    def get_all_tasks(self, author: str):
+        with sql.connect(self.path) as conn:
+            cursor = conn.cursor()
+            
+            query = '''SELECT * FROM Tasks WHERE author = ? '''
+            data = (author,)
+            cursor.execute(query, data)
+            
+            tasksData = cursor.fetchall()
+            if tasksData:
+                tasksList = []
+                for taskData in tasksData:
+                    task = {
+                        'id': taskData[0],
+                        'tittle': taskData[1],
+                        'description': taskData[2],
+                        'state': taskData[3],
+                        'created': taskData[4],
+                        'updated': taskData[5],
+                        'author': taskData[6]
+                    }
+                    tasksList.append(task)    
+                return tasksList
+            return None
+    
+    def get_task_by_id(self, id: int, author: str):
+        with sql.connect(self.path) as conn:
+            cursor = conn.cursor()
+            
+            query = '''SELECT * FROM Tasks WHERE id = ? AND author = ? '''
+            data = (id, author)
+            
+            cursor.execute(query, data)
+            
+            taskData = cursor.fetchone()
+            if taskData:
+                task = {
+                    'id': taskData[0],
+                    'tittle': taskData[1],
+                    'description': taskData[2],
+                    'state': taskData[3],
+                    'created': taskData[4],
+                    'updated': taskData[5],
+                    'author': taskData[6]
+                }
+                return task
+            return None
+
+    def delete_task_by_id(self, id: int, author: str):
+        with sql.connect(self.path) as conn:
+            cursor = conn.cursor()
+            
+            query = '''DELETE FROM Tasks WHERE id = ? AND author = ?'''
+            data = (id, author)
+            
+            cursor.execute(query, data)
+            conn.commit()
+            return True
+        return False
+    
+    def update_state_task(self, id: int, author: str, new_state: str):
+        with sql.connect(self.path) as conn:
+            cursor = conn.cursor()
+            
+            query = '''UPDATE Tasks SET state = ?, updated = ? WHERE id = ? AND author = ?'''
+            data = (new_state, datetime.now().strftime('%d-%m-%Y'), id, author)
+            
+            cursor.execute(query,data)
+            conn.commit()
+            return True
+        return False
