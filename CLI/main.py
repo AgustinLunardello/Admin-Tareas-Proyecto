@@ -1,123 +1,132 @@
-import requests
-import json
-from datetime import datetime
-TOKEN = ''
-USERNAME = ''
-HEADERS = {
-    'Authorization': ""}
-HOST = '127.0.0.1'
-PORT = 8000
-URL = f'http://{HOST}:{PORT}'
+from responses import *
+from getpass import getpass
+import os
+from colorama import Fore
 
+def register_user_cli():
+    name = input('Enter your name: ')
+    lastName = input('Enter your lastname: ')
+    bornDate = input('Enter your birthday (dd-mm-YYYY): ')
+    username = input('Enter any username: ')
+    password = input('Enter any password: ')
+    register_user(name, lastName, username, password, bornDate) 
 
-def register_user(name: str, lastname: str, username: str, password: str, bornDate: str = None) -> dict:
-    global URL, HEADERS
-    if bornDate:
-        bornDate = str(datetime.strptime(bornDate, '%d-%m-%Y').date())
-    data = {
-        'name': name,
-        'lastName': lastname,
-        'bornDate': bornDate,
-        'username': username,
-        'password': password
-    }
-    r = requests.post(URL+'/register-user', data=json.dumps(data))
-    print(r.json()['message'])
+def login_cli():
+    while True:
+        print('0. Login user')
+        print('1. Register user')
+        print('2. Exit')
+        _ = int(input(''))
+        if _ == 0:
+            username = input('Username: ')
+            password = getpass('Password: ')
+            os.system('cls')
+            __ = login_user(username, password)
+            if __ :
+                break
+        elif _ == 1:
+            register_user_cli()
+        elif _ == 2:
+            break
+        else:
+            print(Fore.RED+'Option not exists'+Fore.RESET)
+        
 
+def add_task_cli():
+    while True:
+        title = input('Enter the title of the task: ')
+        if title != '':
+            description = input('Enter the description of the task: ')
+            state = input('Enter the state of the task: ')
+            if state:
+                state = 'Pendiente'
+                
+            add_task(title, description, state)
+            break
+        print(Fore.RED +'The task must have a title'+Fore.RESET)
 
-def login_user(username: str, password: str) -> dict:
-    global TOKEN, HEADERS, URL, USERNAME
-    USERNAME = username
-    data = {
-        'username': username,
-        'password': password
-    }
-    r = requests.post(URL+'/login', data=json.dumps(data))
-    if r.status_code == 200:
-        print(r.json()['message'])
+def get_all_tasks_cli():
+    tasks = get_tasks()
+    if tasks:
+        print('<------- task list ------>')
+        for task in tasks:
+            print(Fore.RED+'ID:'+Fore.RESET, task['id'])
+            print(Fore.RED+'Title:'+Fore.RESET, task['tittle'])
+            print(Fore.RED+'Description:'+Fore.RESET, task['description'])
+            print(Fore.RED+'State:'+Fore.RESET, task['state'])
+            print(Fore.RED+'Created:'+Fore.RESET, task['created'])
+            print(Fore.RED+'Updated:'+Fore.RESET, task['updated'])
+            print('<-------------------------------->')
 
-        TOKEN = r.json()['access_token']
-        HEADERS['Authorization'] = f'Bearer {TOKEN}'
-    elif r.status_code == 401:
-        print(r.json()['detail'])
+def get_task_by_id_cli():
+    id_task = int(input('Enter the id task: '))
+    task = get_task_by_id(id_task)
+    if task :
+        print('<----- task ----->')
+        print(Fore.RED+'ID:'+Fore.RESET, task['id'])
+        print(Fore.RED+'Title:'+Fore.RESET, task['tittle'])
+        print(Fore.RED+'Description:'+Fore.RESET, task['description'])
+        print(Fore.RED+'State:'+Fore.RESET, task['state'])
+        print(Fore.RED+'Created:'+Fore.RESET, task['created'])
+        print(Fore.RED+'Updated:'+Fore.RESET, task['updated'])
+        print('<-------------------------------->')
 
+def update_state_task_cli():
+    id_task = int(input('Enter the id task: '))
+    new_state = input('Enter the new state: ')
+    update_state_task(id_task, new_state)
 
-def add_task(tittle: str, description: str = '', state: str = 'Pendient'):
-    global URL, USERNAME, HEADERS
-    data = {
-        'tittle': tittle,
-        'description': description,
-        'state': state,
-        'author': USERNAME
-    }
-    r = requests.post(url=URL+'/task', data=json.dumps(data), headers=HEADERS)
-    if r.status_code == 200:
-        print(r.json()['message'])
-    elif r.status_code == 401:
-        print("Unauthorized must login")
+def delete_task_cli():
+    id_task = int(input('Enter the id task: '))
+    delete_task(id_task)
 
+def main():
+    login_cli()
+    while True:
+        print('<------ Options -------->')
+        print('1. Add tasks')
+        print('2. Get all tasks')
+        print('3. Get task by id')
+        print('4. Updated state task')
+        print('5. delete task')
+        print('6. Login')
+        print('7. Exit')
+        print('<-------------------------->')
+        
+        opt = int(input(''))
+        
+        #add task
+        if opt == 1:
+            os.system('cls')
+            add_task_cli()
+        #get all task
+        elif opt == 2:
+            os.system('cls')
+            get_all_tasks_cli()
+        #get task by id
+        elif opt == 3:
+            os.system('cls')
+            get_task_by_id_cli()
+        #update state task
+        elif opt == 4:
+            os.system('cls')
+            update_state_task_cli()
+        #delete task
+        elif opt == 5:
+            os.system('cls')
+            delete_task_cli()
+        #login
+        elif opt == 6:
+            os.system('cls')
+            login_cli()
+        #exit
+        elif opt == 7:
+            os.system('cls')
+            break
+        #option not exists
+        else:
+            os.system('cls')
+            print(Fore.RED +'Option not exists'+Fore.RESET)
 
-def get_tasks() -> list:
-    global URL, USERNAME, HEADERS
-    r = requests.get(url=URL+f'/tasks/{USERNAME}', headers=HEADERS)
-    if r.status_code == 200:
-        return r.json()
-    elif r.status_code == 404:
-        print(r.json()['detail'])
-    elif r.status_code == 401:
-        print("Unauthorized must login")
-
-
-def get_task_by_id(id_task: int) -> dict:
-    global URL, USERNAME, HEADERS
-    r = requests.get(url=URL+f'/task/{id_task}/{USERNAME}', headers=HEADERS)
-
-    if r.status_code == 200:
-        return r.json()
-    elif r.status_code == 404:
-        print(r.json()['detail'])
-    elif r.status_code == 401:
-        print("Unauthorized must login")
-
-
-def delete_task(id_task: int):
-    global URL, USERNAME, HEADERS
-    r = requests.delete(
-        url=URL+f'/task_delete/{id_task}/{USERNAME}', headers=HEADERS)
-
-    if r.status_code == 200:
-        print(r.json()['message'])
-    elif r.status_code == 404:
-        print(r.json()['detail'])
-    elif r.status_code == 401:
-        print("Unauthorized must login")
-
-
-def update_state_task(id_task: int, new_state: str):
-    global URL, USERNAME, HEADERS
-    r = requests.put(
-        url=URL+f'/task_new_state/{id_task}/{USERNAME}/{new_state}', headers=HEADERS)
-    if r.status_code == 200:
-        print(r.json()['message'])
-    elif r.status_code == 404:
-        print(r.json()['detail'])
-    elif r.status_code == 401:
-        print("Unauthorized must login")
-
-
-# register_user('Agustin', 'Lunardello', 'AgusLuna', '12345', '03-05-2004')
-# login_user('AgusLuna', '12345')
-# add_task('google')
-# tasks = get_tasks()
-# print('ID   |   Tittle  |   Desc    |   state   |   created    |    updated')
-# for task in tasks:
-#     print(task['id'], end='      ')
-#     print(task['tittle'], end='        ')
-#     print(task['description'], end='         ')
-#     print(task['state'], end='         ')
-#     print(task['created'], end='       ')
-#     print(task['updated'], end='       ')
-# get_task_by_id(3)
-# update_state_task(3,'new state')
-# get_task_by_id(3)
-# delete_task(3)
+if __name__ == '__main__':
+    main()
